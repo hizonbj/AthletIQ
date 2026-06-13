@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: confidence-engine
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      pool-name: cfeng-pool
+
+server:
+  port: 8080
+
+# The Select AI profile name created in setup_adb.sql section 3.
+app:
+  ai-profile: CONFIDENCE
+  promote-threshold: 80

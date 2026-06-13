@@ -1,0 +1,9 @@
+target/
+*.class
+.idea/
+*.iml
+.DS_Store
+# never commit secrets or wallet
+*.env
+wallet/
+Wallet_*.zip

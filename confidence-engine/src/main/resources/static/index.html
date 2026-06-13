@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confidence Engine — Production Readiness Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <div class="bar__id">
+      <span id="barDot" class="bar__dot"></span>
+      <span class="bar__name">CONFIDENCE&nbsp;ENGINE</span>
+      <span class="bar__sub">assessing its own production readiness</span>
+    </div>
+    <div class="bar__status">
+      <span class="eyebrow">project status</span>
+      <span id="statusPill" class="pill pill--poc">POC</span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="panel gauge">
+      <span class="eyebrow">launch readiness</span>
+      <div id="gaugeRing" class="gauge__ring">
+        <svg viewBox="0 0 200 200" width="220" height="220" aria-hidden="true">
+          <circle class="gauge__track" cx="100" cy="100" r="86"/>
+          <circle id="gaugeArc" class="gauge__arc" cx="100" cy="100" r="86"/>
+        </svg>
+        <div class="gauge__readout">
+          <span id="readinessPct" class="gauge__pct">--</span>
+          <span class="gauge__unit">% ready</span>
+        </div>
+      </div>
+      <p class="gauge__gaps"><span id="openGaps">--</span> open gaps before production</p>
+    </section>
+
+    <section class="panel controls">
+      <span class="eyebrow">readiness signals</span>
+      <div id="tiles" class="tiles"></div>
+      <div id="gaps" class="gaps"></div>
+      <div class="actions">
+        <button id="hintBtn" class="btn btn--ghost">Ask the database for a hint</button>
+        <button id="promoteBtn" class="btn btn--launch">Promote anyway →</button>
+      </div>
+      <div id="hintPanel" class="hint" hidden>
+        <span id="hintLabel" class="eyebrow eyebrow--ai">Autonomous Database · Select AI</span>
+        <p id="hintText" class="hint__text"></p>
+      </div>
+    </section>
+
+    <section class="panel audit">
+      <div class="audit__head">
+        <span class="eyebrow">audit log</span>
+        <span class="audit__live">● live</span>
+      </div>
+      <ol id="auditFeed" class="audit__feed"></ol>
+    </section>
+  </main>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>
