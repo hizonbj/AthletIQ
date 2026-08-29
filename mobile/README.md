@@ -216,9 +216,10 @@ is not code you can write without decisions or hardware:
    one coach, and it is not multi-device: athletes cannot check in on their own
    phones and have it reach the coach. That needs a backend, accounts and a sync
    model — a product decision, not a missing function.
-4. **Store metadata**: privacy policy, screenshots, description. The privacy
-   story is unusually simple — nothing leaves the device — and worth saying
-   plainly.
+4. **Store metadata**: screenshots and a description. `PRIVACY.md` is written
+   and accurate to what the app actually does; it needs hosting at a public URL
+   for the store listings. Keep it accurate — if a future version adds an
+   account or sync, the answers in it genuinely change.
 
 ## Deliberate constraints
 
