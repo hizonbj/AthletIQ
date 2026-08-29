@@ -62,13 +62,31 @@ src/domain/      pure TypeScript, no React or native imports
   override.ts    detection, outcome settlement, pattern aggregation
   insights.ts    replays history and applies entitlement gating
   roster.ts      squad triage for the coach view
-src/data/        Repository interface, SQLite (native), localStorage (web)
+src/data/        Repository interface, SQLite (native), localStorage (web),
+                 backup export and restore
 src/health/      HealthProvider seam, pure aggregation and merge rules,
                  HealthKit (iOS) and Health Connect (Android) adapters
+src/notifications/ reminder scheduling behind an interface
+src/settings/    preferences, with a defensive merge over stored values
 src/subscription/entitlements, PurchaseStore, and the RevenueCat adapter
 src/ui/          design tokens, shared components, input controls, app state
-app/             expo-router screens; (tabs)/ are the three peers
+app/             expo-router screens; (tabs)/ are the four peers
 ```
+
+## Two things that are easy to get wrong here
+
+**Days are local, not UTC.** A `DayISO` is a calendar day label, not an instant.
+Label arithmetic (`addDays`, `daysBetween`) runs through UTC midnight so it is
+free of DST drift, but deciding which day an instant falls on uses the device
+calendar — otherwise an 11:30pm session in Los Angeles is filed against tomorrow
+and a 7am wake-up in Sydney against yesterday. CI runs the suite in five
+timezones because that bug survived by everything running in UTC.
+
+**History is scored in bulk, not per day.** `replay.ts` is day-indexed with
+prefix-summed loads. The obvious filter-per-day version is quadratic and took
+~940ms at two years of data, on every screen focus. `replay.test.ts` keeps the
+naive version as a reference and asserts the two agree; `perf.test.ts` holds the
+budget at 300ms.
 
 The domain layer imports nothing from React Native, which is why it is testable
 in Node without a simulator. Screens read gated values through `insights.ts` and
@@ -104,9 +122,14 @@ Two decisions worth knowing about:
 ```bash
 npm install
 npm start          # Expo dev server; press i / a / w
-npm test           # 176 unit tests
+npm test           # 228 unit tests
 npm run typecheck
+npm run lint
+npm run verify     # all three
 ```
+
+CI runs typecheck, lint, the suite across five timezones, and a real Metro
+bundle — typechecking does not prove the app links.
 
 `npm start` with `w` runs in a browser against the localStorage repository —
 `expo-sqlite` is native-only, so the platform factory in `src/data/factory.ts`
@@ -178,11 +201,40 @@ rather than pushes from Today, which had buried the paid screens two taps deep.
 
 ## Before shipping
 
-- Swap `MockPurchaseStore` for `RevenueCatPurchaseStore` (above).
-- Give the roster a real backend. It is in-memory on device today, because a
-  coach squad syncs from a server in any real deployment and persisting it
-  locally would be the wrong shape to build on.
-- Add app icon and splash assets.
+The app is feature-complete for a consumer launch and builds clean. What is left
+is not code you can write without decisions or hardware:
+
+1. **Swap `MockPurchaseStore` for `RevenueCatPurchaseStore`** (see Payments).
+   Needs a RevenueCat account, entitlements named `pro` and `coach`, and store
+   products. Nothing above the interface changes.
+2. **Run it on a device.** The native adapters — RevenueCat, HealthKit, Health
+   Connect, notifications — typecheck against real SDK types but have never
+   executed. Nor has any haptic or spring, which is the half of the interface a
+   browser cannot show you.
+3. **Decide what the coach tier is.** Today a coach can add athletes and record
+   their mornings on one device. That is genuinely usable for a small squad with
+   one coach, and it is not multi-device: athletes cannot check in on their own
+   phones and have it reach the coach. That needs a backend, accounts and a sync
+   model — a product decision, not a missing function.
+4. **Store metadata**: privacy policy, screenshots, description. The privacy
+   story is unusually simple — nothing leaves the device — and worth saying
+   plainly.
+
+## Deliberate constraints
+
+**Nothing leaves the device.** No account, no server, no analytics. That is a
+product position as much as an architecture: an override log is a record of
+someone's own judgement, and there is no reason it should sit on our server
+before they ask it to. The cost is that backup is the athlete's job, which is
+why export exists and why the app says so.
+
+**It is not a medical device.** No diagnosis, no injury prediction. Framing this
+as injury-risk prediction would pull it toward medical-claim territory and App
+Store health review; the training-decision framing is both safer and the more
+differentiated product.
+
+**The score is free permanently.** Charging for it invites a comparison with
+hardware we lose.
 
 ## What is verified, and what is not
 
