@@ -18,6 +18,12 @@ import type {
 } from './types';
 import { summarizeLoad } from './load';
 import { daysBetween } from './dates';
+import {
+  ENERGY_WORDS,
+  SLEEP_QUALITY_WORDS,
+  SORENESS_WORDS,
+  wordFor,
+} from './scales';
 
 export const WEIGHTS: Record<SignalKey, number> = {
   sleepHours: 3,
@@ -98,6 +104,13 @@ export function restingHrBaseline(
   return values.length % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];
 }
 
+/** "7h 30m" — the same wording the check-in ruler uses. */
+function formatSleep(h: number): string {
+  const hours = Math.floor(h);
+  const minutes = Math.round((h - hours) * 60);
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+}
+
 export function bandForScore(score: number): Band {
   if (score < 40) return 'rest';
   if (score < 60) return 'easy';
@@ -147,21 +160,26 @@ export function computeReadiness(input: ReadinessInput): Readiness {
   };
 
   if (checkIn?.sleepHours !== undefined) {
-    add('sleepHours', 'Sleep', scoreSleepHours(checkIn.sleepHours), `${checkIn.sleepHours} h`);
+    add('sleepHours', 'Sleep', scoreSleepHours(checkIn.sleepHours), formatSleep(checkIn.sleepHours));
   }
   if (checkIn?.sleepQuality !== undefined) {
     add(
       'sleepQuality',
       'Sleep quality',
       scoreFivePointUp(checkIn.sleepQuality),
-      `${checkIn.sleepQuality}/5`,
+      wordFor(SLEEP_QUALITY_WORDS, checkIn.sleepQuality),
     );
   }
   if (checkIn?.soreness !== undefined) {
-    add('soreness', 'Soreness', scoreFivePointDown(checkIn.soreness), `${checkIn.soreness}/5`);
+    add(
+      'soreness',
+      'Soreness',
+      scoreFivePointDown(checkIn.soreness),
+      wordFor(SORENESS_WORDS, checkIn.soreness),
+    );
   }
   if (checkIn?.energy !== undefined) {
-    add('energy', 'Energy', scoreFivePointUp(checkIn.energy), `${checkIn.energy}/5`);
+    add('energy', 'Energy', scoreFivePointUp(checkIn.energy), wordFor(ENERGY_WORDS, checkIn.energy));
   }
 
   const baseline = restingHrBaseline(history, date);

@@ -8,15 +8,15 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/ui/AppState';
-import { Card, LockedPanel, SectionTitle } from '@/ui/components';
-import { bandColors, colors, spacing } from '@/ui/theme';
+import { Card, LockedPanel, SectionTitle, Stat } from '@/ui/components';
+import { bandColors, colors, radius, spacing, type, TAB_BAR_CLEARANCE } from '@/ui/theme';
 import { buildRoster, type RosterEntry, type RosterStatus, type RosterView } from '@/domain/roster';
 import { hasFeature } from '@/subscription/entitlements';
 
 const STATUS_COLOR: Record<RosterStatus, string> = {
   flag: bandColors.rest,
   watch: bandColors.easy,
-  stale: colors.textDim,
+  stale: colors.textTertiary,
   ok: bandColors.go,
 };
 
@@ -115,15 +115,6 @@ export default function RosterScreen() {
   );
 }
 
-function Stat({ value, label, color }: { value: string; label: string; color: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
 function AthleteRow({ entry }: { entry: RosterEntry }) {
   const usable = entry.status !== 'stale';
   return (
@@ -160,30 +151,19 @@ function AthleteRow({ entry }: { entry: RosterEntry }) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.md, paddingBottom: spacing.xl },
+  container: { padding: spacing.lg, paddingBottom: TAB_BAR_CLEARANCE },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   summary: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
-  stat: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  statValue: { fontSize: 28, fontWeight: '800' },
-  statLabel: { color: colors.textDim, fontSize: 11, marginTop: 2, textTransform: 'uppercase' },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   rowRight: { alignItems: 'flex-end' },
-  name: { color: colors.text, fontSize: 17, fontWeight: '700', flex: 1 },
-  score: { fontSize: 22, fontWeight: '800' },
-  status: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  reason: { color: colors.textDim, fontSize: 14, marginTop: spacing.sm, lineHeight: 20 },
-  asOf: { color: colors.textDim, fontSize: 12, marginTop: spacing.xs, fontStyle: 'italic' },
-  headline: { color: colors.text, fontSize: 20, fontWeight: '800', marginBottom: spacing.sm },
-  explain: { color: colors.textDim, fontSize: 15, lineHeight: 21 },
-  explainTitle: { color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: spacing.sm },
-  footnote: { color: colors.textDim, fontSize: 12, marginTop: spacing.md, lineHeight: 18 },
-  dim: { color: colors.textDim, fontSize: 15 },
+  name: { ...type.bodyStrong, fontSize: 17, color: colors.text, flex: 1 },
+  score: { ...type.heading, fontSize: 24, fontWeight: '800' },
+  status: { ...type.label, fontSize: 10 },
+  reason: { ...type.caption, fontSize: 14, color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 20 },
+  asOf: { ...type.caption, fontSize: 12, color: colors.textTertiary, marginTop: spacing.xs },
+  headline: { ...type.title, color: colors.text, marginBottom: spacing.sm },
+  explain: { ...type.body, color: colors.textSecondary, lineHeight: 23 },
+  explainTitle: { ...type.heading, color: colors.text, marginBottom: spacing.sm },
+  footnote: { ...type.caption, fontSize: 12, color: colors.textTertiary, marginTop: spacing.lg, lineHeight: 18 },
+  dim: { ...type.body, color: colors.textTertiary },
 });

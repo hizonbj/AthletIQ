@@ -66,8 +66,8 @@ src/data/        Repository interface, SQLite (native), localStorage (web)
 src/health/      HealthProvider seam, pure aggregation and merge rules,
                  HealthKit (iOS) and Health Connect (Android) adapters
 src/subscription/entitlements, PurchaseStore, and the RevenueCat adapter
-src/ui/          theme, shared components, app state provider
-app/             expo-router screens
+src/ui/          design tokens, shared components, input controls, app state
+app/             expo-router screens; (tabs)/ are the three peers
 ```
 
 The domain layer imports nothing from React Native, which is why it is testable
@@ -104,7 +104,7 @@ Two decisions worth knowing about:
 ```bash
 npm install
 npm start          # Expo dev server; press i / a / w
-npm test           # 159 unit tests
+npm test           # 176 unit tests
 npm run typecheck
 ```
 
@@ -150,6 +150,31 @@ when you take it.
 
 Both adapters need a development build, HealthKit enabled with Info.plist usage
 strings on iOS, and Health Connect permissions in the manifest on Android.
+
+## Interface
+
+Three decisions shape the whole app:
+
+**No keyboard in the daily loop.** The check-in is one question per screen,
+answered with a single tap that advances automatically — four taps and a scrub,
+start to finish. Sleep is a scrubbing ruler in 15-minute detents rather than a
+number field, because typing "7.5" at 6am demands precision nobody has about
+their own sleep and raises a keyboard over the screen to get it.
+
+**Scales are words, not numbers.** "Soreness: 3" forces the athlete to invent a
+private rubric and apply it consistently for months, which nobody does. Every
+step is named — None, Slight, Noticeable, Sore, Very sore — and the same words
+come back everywhere the value is displayed. They live in `domain/scales.ts`,
+because naming the steps is the definition of the scale, not styling.
+
+**One saturated colour at a time.** The readiness band owns it, so the verdict
+registers before any text is read. The ring sweeps and the number counts up on
+mount: a score that simply appears reads as a label, one that arrives reads as a
+measurement just taken.
+
+Everything tappable scales toward the finger and fires a haptic on touch —
+physical confirmation is what makes an app feel fast. Navigation is three tabs
+rather than pushes from Today, which had buried the paid screens two taps deep.
 
 ## Before shipping
 

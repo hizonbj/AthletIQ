@@ -1,22 +1,77 @@
-/** Shared presentational pieces. No domain logic lives here. */
+/**
+ * Shared presentational pieces. No domain logic lives here.
+ *
+ * Everything pressable animates and gives haptic feedback on touch, because on
+ * a phone the confirmation that a tap registered has to be physical — waiting
+ * for the screen to redraw is what makes an app feel slow even when it is not.
+ */
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
-import { bandColors, colors, radius, spacing } from './theme';
-import type { Band } from '@/domain/types';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { colors, motion, radius, spacing, type } from './theme';
+import { tapFeedback } from './haptics';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+/** Presses scale toward the finger. Shared by every tappable surface. */
+function usePressScale(to = 0.96) {
+  const scale = useSharedValue(1);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return {
+    style,
+    onPressIn: () => {
+      scale.value = withSpring(to, motion.springSnappy);
+    },
+    onPressOut: () => {
+      scale.value = withSpring(1, motion.springSnappy);
+    },
+  };
+}
 
 export function Card({
   children,
   style,
+  tone = 'default',
 }: {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
+  /** `accent` draws a coloured edge, for the one card that matters on a screen. */
+  tone?: 'default' | 'accent' | 'sunken';
 }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  return (
+    <View
+      style={[
+        styles.card,
+        tone === 'accent' && styles.cardAccent,
+        tone === 'sunken' && styles.cardSunken,
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
 }
 
-export function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <Text style={styles.sectionTitle}>{children}</Text>;
+export function SectionTitle({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<TextStyle>;
+}) {
+  return <Text style={[styles.sectionTitle, style]}>{children}</Text>;
 }
 
 export function Button({
@@ -24,80 +79,49 @@ export function Button({
   onPress,
   variant = 'primary',
   disabled,
+  tint,
 }: {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'ghost';
   disabled?: boolean;
+  /** Overrides the fill, so a CTA can carry the readiness band's colour. */
+  tint?: string;
 }) {
+  const press = usePressScale();
+  const filled = variant === 'primary';
+
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled }}
-      onPress={onPress}
+      onPress={() => {
+        tapFeedback();
+        onPress();
+      }}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       disabled={disabled}
-      style={({ pressed }) => [
+      style={[
+        press.style,
         styles.button,
+        filled && { backgroundColor: tint ?? colors.accent },
         variant === 'secondary' && styles.buttonSecondary,
-        (pressed || disabled) && styles.buttonMuted,
+        variant === 'secondary' && tint ? { borderColor: tint } : null,
+        variant === 'ghost' && styles.buttonGhost,
+        disabled && styles.buttonDisabled,
       ]}
     >
-      <Text style={[styles.buttonLabel, variant === 'secondary' && styles.buttonLabelSecondary]}>
+      <Text
+        style={[
+          styles.buttonLabel,
+          filled && styles.buttonLabelFilled,
+          !filled && { color: tint ?? colors.accent },
+        ]}
+      >
         {label}
       </Text>
-    </Pressable>
-  );
-}
-
-/**
- * The readiness ring. Deliberately the only large number on the Today screen —
- * everything else on that screen explains this one figure.
- */
-export function ReadinessRing({
-  score,
-  band,
-  size = 200,
-  /** False when there is no data behind the score: show a dash, not a number. */
-  hasData = true,
-}: {
-  score: number;
-  band: Band;
-  size?: number;
-  hasData?: boolean;
-}) {
-  const stroke = 14;
-  const r = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * r;
-  const filled = hasData ? circumference * (Math.max(0, Math.min(100, score)) / 100) : 0;
-
-  return (
-    <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={colors.surfaceAlt}
-          strokeWidth={stroke}
-          fill="none"
-        />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={bandColors[band]}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={`${filled} ${circumference}`}
-          fill="none"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-      </Svg>
-      <View style={styles.ringCenter} pointerEvents="none">
-        <Text style={styles.ringScore}>{hasData ? score : '--'}</Text>
-        <Text style={styles.ringUnit}>readiness</Text>
-      </View>
-    </View>
+    </AnimatedPressable>
   );
 }
 
@@ -110,33 +134,35 @@ export function LockedPanel({
   onUpgrade: () => void;
 }) {
   return (
-    <Card style={styles.locked}>
-      <Text style={styles.lockedTitle}>Locked</Text>
+    <Card tone="accent">
+      <Text style={styles.lockedTag}>AthletIQ Pro</Text>
       <Text style={styles.lockedReason}>{reason}</Text>
-      <Button label="See AthletIQ Pro" onPress={onUpgrade} variant="secondary" />
+      <Button label="See what you get" onPress={onUpgrade} />
     </Card>
   );
 }
 
-export function Chip({
+/** A single stat, for the summary strip at the top of a screen. */
+export function Stat({
+  value,
   label,
-  selected,
-  onPress,
+  color = colors.text,
 }: {
+  value: string;
   label: string;
-  selected: boolean;
-  onPress: () => void;
+  color?: string;
 }) {
   return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={[styles.chip, selected && styles.chipSelected]}
-    >
-      <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{label}</Text>
-    </Pressable>
+    <View style={styles.stat}>
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
   );
+}
+
+/** Horizontal rule used inside cards, between rows. */
+export function Divider() {
+  return <View style={styles.divider} />;
 }
 
 const styles = StyleSheet.create({
@@ -145,51 +171,50 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
+    padding: spacing.lg,
     marginBottom: spacing.md,
   },
+  cardAccent: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
+  cardSunken: { backgroundColor: colors.surfaceSunken },
   sectionTitle: {
-    color: colors.textDim,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: spacing.sm,
+    ...type.label,
+    color: colors.textTertiary,
+    marginBottom: spacing.md,
+    marginTop: spacing.sm,
   },
   button: {
-    backgroundColor: colors.accent,
     borderRadius: radius.md,
-    paddingVertical: 14,
+    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonSecondary: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.accent,
   },
-  buttonMuted: { opacity: 0.6 },
-  buttonLabel: { color: '#04121F', fontSize: 15, fontWeight: '700' },
-  buttonLabelSecondary: { color: colors.accent },
-  ringCenter: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  ringScore: { color: colors.text, fontSize: 56, fontWeight: '800' },
-  ringUnit: {
-    color: colors.textDim,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
+  buttonGhost: { backgroundColor: 'transparent', paddingVertical: 12 },
+  buttonDisabled: { opacity: 0.4 },
+  buttonLabel: { ...type.bodyStrong },
+  buttonLabelFilled: { color: '#03121F', fontWeight: '700' },
+  lockedTag: { ...type.label, color: colors.accent, marginBottom: spacing.sm },
+  lockedReason: {
+    ...type.body,
+    color: colors.text,
+    lineHeight: 23,
+    marginBottom: spacing.lg,
   },
-  locked: { alignItems: 'flex-start', gap: spacing.sm },
-  lockedTitle: { color: colors.gold, fontSize: 12, fontWeight: '800', letterSpacing: 1.2 },
-  lockedReason: { color: colors.text, fontSize: 15, lineHeight: 21, marginBottom: spacing.sm },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
+  stat: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
   },
-  chipSelected: { borderColor: colors.accent, backgroundColor: '#12304C' },
-  chipLabel: { color: colors.textDim, fontSize: 14, fontWeight: '600' },
-  chipLabelSelected: { color: colors.text },
+  statValue: { ...type.title },
+  statLabel: { ...type.label, color: colors.textTertiary, marginTop: 2 },
+  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.md },
 });

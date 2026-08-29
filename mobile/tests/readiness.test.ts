@@ -239,3 +239,40 @@ function dayBefore(date: string, n: number): string {
   const d = new Date(Date.parse(`${date}T00:00:00.000Z`) - n * 86_400_000);
   return d.toISOString().slice(0, 10);
 }
+
+describe('signal display strings', () => {
+  function contributionsFor(checkIn: CheckIn) {
+    const r = computeReadiness({ date: '2026-08-29', checkIn, history: [], sessions: [] });
+    return new Map(r.contributions.map((c) => [c.key, c.display]));
+  }
+
+  it('names subjective scales instead of printing a bare number', () => {
+    // "3/5" forces the reader to reconstruct a private rubric; the word does not.
+    const display = contributionsFor({
+      date: '2026-08-29',
+      sleepQuality: 3,
+      soreness: 4,
+      energy: 1,
+    });
+    expect(display.get('sleepQuality')).toBe('OK');
+    expect(display.get('soreness')).toBe('Sore');
+    expect(display.get('energy')).toBe('Drained');
+  });
+
+  it('uses each scale\'s own vocabulary at the extremes', () => {
+    const low = contributionsFor({ date: '2026-08-29', sleepQuality: 1, soreness: 1, energy: 5 });
+    expect(low.get('sleepQuality')).toBe('Terrible');
+    expect(low.get('soreness')).toBe('None');
+    expect(low.get('energy')).toBe('Flying');
+  });
+
+  it('formats sleep the way the check-in ruler does', () => {
+    expect(contributionsFor({ date: '2026-08-29', sleepHours: 8 }).get('sleepHours')).toBe('8h');
+    expect(contributionsFor({ date: '2026-08-29', sleepHours: 7.5 }).get('sleepHours')).toBe(
+      '7h 30m',
+    );
+    expect(contributionsFor({ date: '2026-08-29', sleepHours: 6.25 }).get('sleepHours')).toBe(
+      '6h 15m',
+    );
+  });
+});

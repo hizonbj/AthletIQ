@@ -1,33 +1,37 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppStateProvider } from '@/ui/AppState';
 import { colors } from '@/ui/theme';
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <AppStateProvider>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.bg },
-            headerTintColor: colors.text,
-            headerTitleStyle: { fontWeight: '700' },
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        >
-          <Stack.Screen name="index" options={{ title: 'Today' }} />
-          <Stack.Screen name="log" options={{ title: 'Log session' }} />
-          <Stack.Screen name="patterns" options={{ title: 'Patterns' }} />
-          <Stack.Screen name="roster" options={{ title: 'Squad' }} />
-          <Stack.Screen
-            name="paywall"
-            options={{ title: 'AthletIQ Pro', presentation: 'modal' }}
-          />
-        </Stack>
-      </AppStateProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AppStateProvider>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.bg },
+              headerTintColor: colors.text,
+              headerShadowVisible: false,
+              headerTitleStyle: { fontWeight: '700' },
+              contentStyle: { backgroundColor: colors.bg },
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            {/* Full-screen flows: no header, they carry their own chrome. */}
+            <Stack.Screen name="checkin" options={{ headerShown: false }} />
+            <Stack.Screen name="log" options={{ title: 'Log session' }} />
+            <Stack.Screen
+              name="paywall"
+              options={{ headerShown: false, presentation: 'modal' }}
+            />
+          </Stack>
+        </AppStateProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

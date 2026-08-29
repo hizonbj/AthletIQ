@@ -1,16 +1,20 @@
 /**
  * Paywall.
  *
- * The pitch is deliberately not "unlock your score" — the score is free, and
- * claiming otherwise invites the comparison with hardware we lose. It is that
- * the record of your own decisions is worth more the longer it runs.
+ * Leads with what stays free. Gating the score would invite the comparison
+ * with hardware we lose, so the pitch is the one thing no wearable keeps: the
+ * record of your own decisions and what they cost.
  */
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/ui/AppState';
-import { Button, Card } from '@/ui/components';
-import { colors, spacing } from '@/ui/theme';
+import { Button } from '@/ui/components';
+import { bandColors, colors, radius, spacing, type } from '@/ui/theme';
+import { successFeedback, tapFeedback } from '@/ui/haptics';
 import { PurchaseCancelledError, type SubscriptionPlan } from '@/subscription/store';
 
 const BENEFITS = [
@@ -46,6 +50,7 @@ export default function PaywallScreen() {
     setError(undefined);
     try {
       const result = await purchases.purchase(selected);
+      successFeedback();
       setTier(result.tier);
       router.back();
     } catch (e) {
@@ -64,7 +69,7 @@ export default function PaywallScreen() {
     try {
       const result = await purchases.restore();
       setTier(result.tier);
-      if (result.tier === 'pro') router.back();
+      if (result.tier !== 'free') router.back();
       else setError('No previous purchase found on this account.');
     } catch {
       setError('Could not restore purchases.');
@@ -74,79 +79,160 @@ export default function PaywallScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Your score is free. Always.</Text>
-      <Text style={styles.sub}>
-        What Pro adds is the part no one else keeps: a record of the days you trained through it,
-        and what that did to you.
-      </Text>
+    <View style={styles.root}>
+      <LinearGradient colors={[colors.accentSoft, colors.bg]} style={styles.wash} />
+      <SafeAreaView edges={['top']} style={styles.safe}>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={16}
+          style={styles.close}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        >
+          <Text style={styles.closeGlyph}>✕</Text>
+        </Pressable>
 
-      <Card>
-        {BENEFITS.map((b) => (
-          <View key={b} style={styles.benefit}>
-            <Text style={styles.tick}>✓</Text>
-            <Text style={styles.benefitText}>{b}</Text>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <Animated.View entering={FadeInDown.duration(320)}>
+            <Text style={styles.title}>Your score is free.{'\n'}Always.</Text>
+            <Text style={styles.sub}>
+              What Pro adds is the part no one else keeps: a record of the days you trained through
+              it, and what that did to you.
+            </Text>
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(80).duration(320)} style={styles.benefits}>
+            {BENEFITS.map((b) => (
+              <View key={b} style={styles.benefit}>
+                <View style={styles.tickWrap}>
+                  <Text style={styles.tick}>✓</Text>
+                </View>
+                <Text style={styles.benefitText}>{b}</Text>
+              </View>
+            ))}
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(160).duration(320)}>
+            {plans.map((p) => (
+              <PlanRow
+                key={p.id}
+                plan={p}
+                selected={selected === p.id}
+                onSelect={() => {
+                  tapFeedback();
+                  setSelected(p.id);
+                }}
+              />
+            ))}
+          </Animated.View>
+
+          {error && <Text style={styles.error}>{error}</Text>}
+
+          <View style={styles.actions}>
+            <Button label={busy ? 'Working…' : 'Start Pro'} onPress={onPurchase} disabled={busy} />
+            <Button label="Restore purchase" variant="ghost" onPress={onRestore} disabled={busy} />
           </View>
-        ))}
-      </Card>
 
-      {plans.map((p) => (
-        <Card key={p.id} style={selected === p.id ? styles.planSelected : undefined}>
-          <View style={styles.planRow}>
-            <View>
-              <Text style={styles.planTitle}>{p.title}</Text>
-              {p.badge && <Text style={styles.badge}>{p.badge}</Text>}
-            </View>
-            <Text style={styles.price}>{p.price}</Text>
-          </View>
-          <View style={styles.gap} />
-          <Button
-            label={selected === p.id ? 'Selected' : 'Choose'}
-            variant="secondary"
-            onPress={() => setSelected(p.id)}
-          />
-        </Card>
-      ))}
+          <Text style={styles.legal}>
+            AthletIQ tracks training decisions. It is not a medical device and does not diagnose,
+            treat, or predict injury. Your data stays on your device.
+          </Text>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
 
-      {error && <Text style={styles.error}>{error}</Text>}
-
-      <Button label={busy ? 'Working…' : 'Start Pro'} onPress={onPurchase} disabled={busy} />
-      <View style={styles.gap} />
-      <Button label="Restore purchase" variant="secondary" onPress={onRestore} disabled={busy} />
-
-      <Text style={styles.legal}>
-        AthletIQ tracks training decisions. It is not a medical device and does not diagnose,
-        treat, or predict injury. Your data stays on your device.
-      </Text>
-    </ScrollView>
+function PlanRow({
+  plan,
+  selected,
+  onSelect,
+}: {
+  plan: SubscriptionPlan;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onSelect}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      style={[styles.plan, selected && styles.planSelected]}
+    >
+      <View style={[styles.radio, selected && styles.radioSelected]}>
+        {selected && <View style={styles.radioDot} />}
+      </View>
+      <View style={styles.planText}>
+        <Text style={styles.planTitle}>{plan.title}</Text>
+        {plan.badge && <Text style={styles.badge}>{plan.badge}</Text>}
+      </View>
+      <Text style={styles.price}>{plan.price}</Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.md, paddingBottom: spacing.xl },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800', marginTop: spacing.md },
+  root: { flex: 1, backgroundColor: colors.bg },
+  wash: { position: 'absolute', top: 0, left: 0, right: 0, height: 320 },
+  safe: { flex: 1 },
+  close: { alignSelf: 'flex-end', padding: spacing.lg },
+  closeGlyph: { color: colors.textSecondary, fontSize: 20 },
+  scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl },
+  title: { ...type.title, fontSize: 34, color: colors.text, lineHeight: 40 },
   sub: {
-    color: colors.textDim,
-    fontSize: 16,
-    lineHeight: 23,
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
+    ...type.body,
+    color: colors.textSecondary,
+    lineHeight: 24,
+    marginTop: spacing.md,
+    marginBottom: spacing.xl,
   },
-  benefit: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  tick: { color: '#3DD68C', fontSize: 16, fontWeight: '800' },
-  benefitText: { color: colors.text, fontSize: 15, lineHeight: 21, flex: 1 },
-  planSelected: { borderColor: colors.accent },
-  planRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  planTitle: { color: colors.text, fontSize: 17, fontWeight: '700' },
-  badge: { color: colors.gold, fontSize: 12, fontWeight: '700', marginTop: 2 },
-  price: { color: colors.text, fontSize: 20, fontWeight: '800' },
-  error: { color: '#E5484D', fontSize: 14, marginBottom: spacing.md },
+  benefits: { marginBottom: spacing.xl },
+  benefit: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg, alignItems: 'center' },
+  tickWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0F3328',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tick: { color: bandColors.go, fontSize: 13, fontWeight: '800' },
+  benefitText: { ...type.body, color: colors.text, lineHeight: 22, flex: 1 },
+  plan: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  planSelected: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioSelected: { borderColor: colors.accent },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
+  planText: { flex: 1 },
+  planTitle: { ...type.bodyStrong, color: colors.text },
+  badge: { ...type.label, color: bandColors.easy, marginTop: 2 },
+  price: { ...type.heading, color: colors.text },
+  actions: { marginTop: spacing.lg, gap: spacing.sm },
+  error: { color: bandColors.rest, ...type.caption, marginBottom: spacing.md },
   legal: {
-    color: colors.textDim,
+    ...type.caption,
     fontSize: 11,
-    lineHeight: 16,
-    marginTop: spacing.lg,
+    color: colors.textTertiary,
+    lineHeight: 17,
+    marginTop: spacing.xl,
     textAlign: 'center',
   },
-  gap: { height: spacing.sm },
 });
