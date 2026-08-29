@@ -14,10 +14,20 @@ import { colors, spacing } from '@/ui/theme';
 import { INTENSITIES, type Intensity } from '@/domain/types';
 import { checkBeforeSession, isLocked } from '@/domain/insights';
 import type { PriorWarning } from '@/domain/override';
+import type { ImportStatus } from '@/health/import';
+
+const IMPORT_MESSAGE: Record<ImportStatus, string> = {
+  imported: '',
+  'nothing-new': 'Nothing new to import — your entries already cover these days.',
+  denied: 'Health access was declined. You can still enter everything by hand.',
+  unavailable: 'Health data is not available on this device.',
+};
 
 export default function LogScreen() {
-  const { today, saveCheckIn, addSession, repo, tier, insights } = useApp();
+  const { today, saveCheckIn, addSession, repo, tier, insights, importHealth } = useApp();
   const router = useRouter();
+  const [importing, setImporting] = useState(false);
+  const [importNote, setImportNote] = useState<string>();
 
   const [sleepHours, setSleepHours] = useState('');
   const [restingHr, setRestingHr] = useState('');
@@ -85,12 +95,37 @@ export default function LogScreen() {
     router.back();
   }
 
+  async function onImportHealth() {
+    setImporting(true);
+    setImportNote(undefined);
+    try {
+      const result = await importHealth();
+      setImportNote(
+        result.status === 'imported'
+          ? `Filled in ${result.filledCount} value${result.filledCount === 1 ? '' : 's'} from Health.`
+          : IMPORT_MESSAGE[result.status],
+      );
+    } catch {
+      setImportNote('Could not read from Health.');
+    } finally {
+      setImporting(false);
+    }
+  }
+
   const ceiling = insights?.today.readiness.recommendedCeiling;
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <SectionTitle>This morning</SectionTitle>
       <Card>
+        <Button
+          label={importing ? 'Reading Health…' : 'Import from Health'}
+          variant="secondary"
+          onPress={onImportHealth}
+          disabled={importing}
+        />
+        {importNote && <Text style={styles.importNote}>{importNote}</Text>}
+        <View style={styles.gap} />
         <LabeledInput
           label="Sleep (hours)"
           value={sleepHours}
@@ -236,4 +271,5 @@ const styles = StyleSheet.create({
   warnTitle: { color: colors.gold, fontSize: 15, fontWeight: '800', marginBottom: spacing.sm },
   warnBody: { color: colors.text, fontSize: 15, lineHeight: 21 },
   gap: { height: spacing.sm },
+  importNote: { color: colors.textDim, fontSize: 13, marginTop: spacing.sm, lineHeight: 18 },
 });

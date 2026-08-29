@@ -24,6 +24,17 @@ export interface PurchaseResult {
   expiresAt?: string;
 }
 
+/**
+ * Thrown when the buyer dismisses the store sheet. Not an error condition —
+ * the paywall must fall silent rather than accuse them of a failed payment.
+ */
+export class PurchaseCancelledError extends Error {
+  constructor() {
+    super('Purchase cancelled');
+    this.name = 'PurchaseCancelledError';
+  }
+}
+
 export interface PurchaseStore {
   getTier(): Promise<Tier>;
   getPlans(): Promise<SubscriptionPlan[]>;

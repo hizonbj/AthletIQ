@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { useApp } from '@/ui/AppState';
 import { Button, Card } from '@/ui/components';
 import { colors, spacing } from '@/ui/theme';
-import type { SubscriptionPlan } from '@/subscription/store';
+import { PurchaseCancelledError, type SubscriptionPlan } from '@/subscription/store';
 
 const BENEFITS = [
   'Every session you trained through a low score, on the record',
@@ -49,7 +49,10 @@ export default function PaywallScreen() {
       setTier(result.tier);
       router.back();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Purchase failed. Please try again.');
+      // Dismissing the store sheet is a choice, not a failure. Say nothing.
+      if (!(e instanceof PurchaseCancelledError)) {
+        setError(e instanceof Error ? e.message : 'Purchase failed. Please try again.');
+      }
     } finally {
       setBusy(false);
     }

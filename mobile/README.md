@@ -22,17 +22,34 @@ subscribed.
 
 ## Free vs Pro
 
-| | Free | Pro |
-|---|---|---|
-| Today's score and what is limiting it | Yes | Yes |
-| Logging | Yes | Yes |
-| History | 7 days | Everything |
-| Override log | — | Yes |
-| What each override cost | — | Yes |
-| Pre-session warning | — | Yes |
+| | Free | Pro | Coach |
+|---|---|---|---|
+| Today's score and what is limiting it | Yes | Yes | Yes |
+| Logging | Yes | Yes | Yes |
+| History | 7 days | Everything | Everything |
+| Override log | — | Yes | Yes |
+| What each override cost | — | Yes | Yes |
+| Pre-session warning | — | Yes | Yes |
+| Squad roster | — | — | Yes |
 
-$9.99/mo or $69.99/yr. The score stays free permanently — charging for it
-invites a comparison with hardware we lose.
+Pro is $9.99/mo or $69.99/yr. Coach is $12/athlete/mo — a 20-athlete squad is
+worth roughly twenty consumers, and clubs churn far less than individuals.
+
+The score stays free permanently. Charging for it invites a comparison with
+hardware we lose.
+
+## The coach roster
+
+The same engine pointed at a squad. It produces a worklist, not a leaderboard:
+athletes are sorted by who needs a conversation first — flagged for a rest-band
+reading or for repeat overrides in the trailing 30 days, so someone quietly
+grinding through low days surfaces even when today looks fine.
+
+Readiness is carried forward from the most recent real reading within three
+days, labelled with its age. Scoring only the current day made every athlete
+read as "no data" at 7am before anyone had checked in, which made the screen
+useless exactly when a coach opens it. Past that window they show a dash, and
+they are excluded from the squad average rather than inflating it.
 
 ## Layout
 
@@ -44,8 +61,11 @@ src/domain/      pure TypeScript, no React or native imports
   readiness.ts   signal normalization and weighted scoring
   override.ts    detection, outcome settlement, pattern aggregation
   insights.ts    replays history and applies entitlement gating
+  roster.ts      squad triage for the coach view
 src/data/        Repository interface, SQLite (native), localStorage (web)
-src/subscription/entitlements and the PurchaseStore interface
+src/health/      HealthProvider seam, pure aggregation and merge rules,
+                 HealthKit (iOS) and Health Connect (Android) adapters
+src/subscription/entitlements, PurchaseStore, and the RevenueCat adapter
 src/ui/          theme, shared components, app state provider
 app/             expo-router screens
 ```
@@ -84,7 +104,7 @@ Two decisions worth knowing about:
 ```bash
 npm install
 npm start          # Expo dev server; press i / a / w
-npm test           # 80 unit tests
+npm test           # 159 unit tests
 npm run typecheck
 ```
 
@@ -92,12 +112,63 @@ npm run typecheck
 `expo-sqlite` is native-only, so the platform factory in `src/data/factory.ts`
 swaps backends automatically.
 
+## Payments
+
+`src/subscription/revenueCat.ts` implements `PurchaseStore` against RevenueCat.
+The decisions live in `revenueCatMapping.ts` — which entitlement wins, what
+counts as a cancellation — and are unit tested; the class around them is SDK
+plumbing.
+
+To switch off the development stub:
+
+1. Create the `pro` and `coach` entitlements in the RevenueCat dashboard. The
+   ids in `revenueCatMapping.ts` must match those entitlements, not the store
+   product ids.
+2. Build the offering with monthly, annual and per-athlete packages.
+3. Pass `RevenueCatPurchaseStore` into `AppStateProvider` with your iOS and
+   Android API keys.
+4. Run on a development build. This path cannot work in Expo Go or on web.
+
+## Health import
+
+`Import from Health` fills gaps in a check-in from the platform health store.
+One rule governs it: **what the athlete typed wins.** Imported values only ever
+fill a blank, and implausible readings (sleep outside 0.5–16h, resting HR
+outside 25–120bpm) are discarded. Sleep trackers are wrong often enough that
+silently overwriting someone's own account of their night would make readiness
+less trustworthy, not more.
+
+Sleep is attributed to the morning the athlete woke up, so a night starting at
+23:00 counts toward the next day's check-in.
+
+**Android imports sleep and resting HR. iOS imports resting HR only.** Sleep is
+a HealthKit category sample, and the newest `@kingstinct/react-native-healthkit`
+that still supports React 18 (10.x) exposes no category query. Lifting this
+needs React 19, which needs a newer Expo SDK. It is a deliberate deferral, and
+because everything sits behind `HealthProvider`, only `healthKit.ts` changes
+when you take it.
+
+Both adapters need a development build, HealthKit enabled with Info.plist usage
+strings on iOS, and Health Connect permissions in the manifest on Android.
+
 ## Before shipping
 
-- `MockPurchaseStore` is a development stub. Implement `PurchaseStore` against
-  RevenueCat or StoreKit; no caller changes.
-- Wire HealthKit / Health Connect so sleep and resting HR arrive without typing.
+- Swap `MockPurchaseStore` for `RevenueCatPurchaseStore` (above).
+- Give the roster a real backend. It is in-memory on device today, because a
+  coach squad syncs from a server in any real deployment and persisting it
+  locally would be the wrong shape to build on.
 - Add app icon and splash assets.
+
+## What is verified, and what is not
+
+Everything in `src/domain`, `src/health` (aggregation, merge, import
+orchestration) and `src/subscription` (entitlements, RevenueCat mapping) is
+covered by the 159 unit tests and runs in CI without a device.
+
+The native adapters — `revenueCat.ts`, `healthKit.ts`, `healthConnect.ts` — are
+typechecked against the real SDK type definitions, which catches API misuse, but
+they have not been run against a device or a live store account. Test those on a
+development build before trusting them.
 
 ## A deliberate constraint
 

@@ -19,6 +19,9 @@ import type { Repository } from '@/data/repository';
 import type { RosterRepository } from '@/data/rosterRepository';
 import { MockPurchaseStore, type PurchaseStore } from '@/subscription/store';
 import type { Tier } from '@/subscription/entitlements';
+import { createHealthProvider } from '@/health/factory';
+import { importHealthData, type ImportResult } from '@/health/import';
+import type { HealthProvider } from '@/health/types';
 
 interface AppStateValue {
   ready: boolean;
@@ -32,6 +35,7 @@ interface AppStateValue {
   addSession(s: Session): Promise<void>;
   refresh(): Promise<void>;
   setTier(t: Tier): void;
+  importHealth(): Promise<ImportResult>;
 }
 
 const Ctx = createContext<AppStateValue | null>(null);
@@ -47,12 +51,14 @@ export function AppStateProvider({
   repository,
   rosterRepository,
   purchaseStore,
+  healthProvider,
 }: {
   children: React.ReactNode;
   /** Injectable so previews and tests can swap in an in-memory repository. */
   repository?: Repository;
   rosterRepository?: RosterRepository;
   purchaseStore?: PurchaseStore;
+  healthProvider?: HealthProvider;
 }) {
   const repo = useMemo(() => repository ?? createRepository(), [repository]);
   const purchases = useMemo(() => purchaseStore ?? new MockPurchaseStore(), [purchaseStore]);
@@ -60,6 +66,7 @@ export function AppStateProvider({
     () => rosterRepository ?? createRosterRepository(),
     [rosterRepository],
   );
+  const health = useMemo(() => healthProvider ?? createHealthProvider(), [healthProvider]);
 
   const [tier, setTier] = useState<Tier>('free');
   const [insights, setInsights] = useState<Insights>();
@@ -89,6 +96,12 @@ export function AppStateProvider({
     if (ready) void refresh();
   }, [ready, refresh]);
 
+  const importHealth = useCallback(async () => {
+    const result = await importHealthData(health, repo, today);
+    if (result.filledCount > 0) await refresh();
+    return result;
+  }, [health, repo, today, refresh]);
+
   const saveCheckIn = useCallback(
     async (c: CheckIn) => {
       await repo.putCheckIn(c);
@@ -117,6 +130,7 @@ export function AppStateProvider({
     addSession,
     refresh,
     setTier,
+    importHealth,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
