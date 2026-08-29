@@ -10,6 +10,7 @@ import { useApp } from '@/ui/AppState';
 import { Button, Card, ReadinessRing, SectionTitle } from '@/ui/components';
 import { bandColors, bandCopy, colors, spacing } from '@/ui/theme';
 import { isLocked } from '@/domain/insights';
+import { hasFeature } from '@/subscription/entitlements';
 
 export default function TodayScreen() {
   const { insights, ready, refresh, tier } = useApp();
@@ -111,6 +112,12 @@ export default function TodayScreen() {
         variant="secondary"
         onPress={() => router.push('/patterns')}
       />
+      {hasFeature(tier, 'roster') && (
+        <>
+          <View style={styles.gap} />
+          <Button label="Your squad" variant="secondary" onPress={() => router.push('/roster')} />
+        </>
+      )}
       {tier === 'free' && <Text style={styles.footnote}>Free plan</Text>}
     </ScrollView>
   );

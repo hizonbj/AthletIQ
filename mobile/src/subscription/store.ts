@@ -42,6 +42,16 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
   },
 ];
 
+/** Sold per athlete, per month. A 20-athlete squad is worth ~20x one consumer. */
+export const COACH_PLANS: SubscriptionPlan[] = [
+  {
+    id: 'athletiq.coach.monthly',
+    title: 'Coach — per athlete',
+    price: '$12.00',
+    period: 'monthly',
+  },
+];
+
 /** In-memory store for development and tests. */
 export class MockPurchaseStore implements PurchaseStore {
   private tier: Tier;
@@ -55,15 +65,14 @@ export class MockPurchaseStore implements PurchaseStore {
   }
 
   async getPlans(): Promise<SubscriptionPlan[]> {
-    return DEFAULT_PLANS;
+    return [...DEFAULT_PLANS, ...COACH_PLANS];
   }
 
   async purchase(planId: string): Promise<PurchaseResult> {
-    if (!DEFAULT_PLANS.some((p) => p.id === planId)) {
-      throw new Error(`Unknown plan: ${planId}`);
-    }
-    this.tier = 'pro';
-    return { tier: 'pro' };
+    const plan = [...DEFAULT_PLANS, ...COACH_PLANS].find((p) => p.id === planId);
+    if (!plan) throw new Error(`Unknown plan: ${planId}`);
+    this.tier = COACH_PLANS.some((p) => p.id === planId) ? 'coach' : 'pro';
+    return { tier: this.tier };
   }
 
   async restore(): Promise<PurchaseResult> {

@@ -21,6 +21,7 @@ export default function RootLayout() {
           <Stack.Screen name="index" options={{ title: 'Today' }} />
           <Stack.Screen name="log" options={{ title: 'Log session' }} />
           <Stack.Screen name="patterns" options={{ title: 'Patterns' }} />
+          <Stack.Screen name="roster" options={{ title: 'Squad' }} />
           <Stack.Screen
             name="paywall"
             options={{ title: 'AthletIQ Pro', presentation: 'modal' }}

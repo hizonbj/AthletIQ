@@ -14,8 +14,9 @@ import React, {
 import { buildInsights, type Insights } from '@/domain/insights';
 import { toDayISO } from '@/domain/dates';
 import type { CheckIn, DayISO, Session } from '@/domain/types';
-import { createRepository } from '@/data/factory';
+import { createRepository, createRosterRepository } from '@/data/factory';
 import type { Repository } from '@/data/repository';
+import type { RosterRepository } from '@/data/rosterRepository';
 import { MockPurchaseStore, type PurchaseStore } from '@/subscription/store';
 import type { Tier } from '@/subscription/entitlements';
 
@@ -25,6 +26,7 @@ interface AppStateValue {
   tier: Tier;
   insights?: Insights;
   repo: Repository;
+  rosterRepo: RosterRepository;
   purchases: PurchaseStore;
   saveCheckIn(c: CheckIn): Promise<void>;
   addSession(s: Session): Promise<void>;
@@ -43,15 +45,21 @@ export function useApp(): AppStateValue {
 export function AppStateProvider({
   children,
   repository,
+  rosterRepository,
   purchaseStore,
 }: {
   children: React.ReactNode;
   /** Injectable so previews and tests can swap in an in-memory repository. */
   repository?: Repository;
+  rosterRepository?: RosterRepository;
   purchaseStore?: PurchaseStore;
 }) {
   const repo = useMemo(() => repository ?? createRepository(), [repository]);
   const purchases = useMemo(() => purchaseStore ?? new MockPurchaseStore(), [purchaseStore]);
+  const rosterRepo = useMemo(
+    () => rosterRepository ?? createRosterRepository(),
+    [rosterRepository],
+  );
 
   const [tier, setTier] = useState<Tier>('free');
   const [insights, setInsights] = useState<Insights>();
@@ -103,6 +111,7 @@ export function AppStateProvider({
     tier,
     insights,
     repo,
+    rosterRepo,
     purchases,
     saveCheckIn,
     addSession,
