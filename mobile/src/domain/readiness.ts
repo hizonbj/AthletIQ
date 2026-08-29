@@ -16,7 +16,7 @@ import type {
   SignalKey,
   Session,
 } from './types';
-import { summarizeLoad } from './load';
+import { summarizeLoad, type LoadSummary } from './load';
 import { daysBetween } from './dates';
 import {
   ENERGY_WORDS,
@@ -140,6 +140,26 @@ export interface ReadinessInput {
 
 export function computeReadiness(input: ReadinessInput): Readiness {
   const { date, checkIn, history, sessions } = input;
+  return computeReadinessFrom(
+    date,
+    checkIn,
+    restingHrBaseline(history, date),
+    summarizeLoad(sessions, date),
+  );
+}
+
+/**
+ * Score one day from already-resolved inputs.
+ *
+ * Both the single-day path above and the bulk replay call this, so the two
+ * cannot produce different numbers for the same day.
+ */
+export function computeReadinessFrom(
+  date: DayISO,
+  checkIn: CheckIn | undefined,
+  restingHrBase: number | undefined,
+  load: LoadSummary,
+): Readiness {
   const contributions: SignalContribution[] = [];
 
   const add = (
@@ -182,18 +202,16 @@ export function computeReadiness(input: ReadinessInput): Readiness {
     add('energy', 'Energy', scoreFivePointUp(checkIn.energy), wordFor(ENERGY_WORDS, checkIn.energy));
   }
 
-  const baseline = restingHrBaseline(history, date);
-  if (checkIn?.restingHr !== undefined && baseline !== undefined) {
-    const delta = checkIn.restingHr - baseline;
+  if (checkIn?.restingHr !== undefined && restingHrBase !== undefined) {
+    const delta = checkIn.restingHr - restingHrBase;
     add(
       'restingHr',
       'Resting HR',
-      scoreRestingHr(checkIn.restingHr, baseline),
+      scoreRestingHr(checkIn.restingHr, restingHrBase),
       `${checkIn.restingHr} bpm (${delta >= 0 ? '+' : ''}${delta.toFixed(0)} vs base)`,
     );
   }
 
-  const load = summarizeLoad(sessions, date);
   if (load.acwr !== undefined) {
     add('load', 'Training load', scoreAcwr(load.acwr), `ACWR ${load.acwr.toFixed(2)}`);
   }

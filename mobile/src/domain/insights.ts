@@ -16,7 +16,8 @@ import {
   type OverridePattern,
   type PriorWarning,
 } from './override';
-import { addDays, daysBetween } from './dates';
+import { addDays } from './dates';
+import { replay } from './replay';
 import type { Repository } from '@/data/repository';
 import { hasFeature, historyLimitDays, type Tier } from '@/subscription/entitlements';
 
@@ -36,28 +37,14 @@ export function isLocked<T>(v: Gated<T>): v is Locked {
  * Readiness for every day that has any data, replayed in order.
  *
  * Each day is scored using only what was known on or before it, so a past day's
- * score does not shift as new data arrives after it.
+ * score does not shift as new data arrives after it. See `replay.ts` for why
+ * this is day-indexed rather than a filter per day.
  */
 export function replayReadiness(
   checkIns: CheckIn[],
   sessions: Session[],
 ): Map<DayISO, Readiness> {
-  const days = new Set<DayISO>([...checkIns.map((c) => c.date), ...sessions.map((s) => s.date)]);
-  const byDate = new Map(checkIns.map((c) => [c.date, c]));
-  const out = new Map<DayISO, Readiness>();
-
-  for (const date of [...days].sort()) {
-    out.set(
-      date,
-      computeReadiness({
-        date,
-        checkIn: byDate.get(date),
-        history: checkIns.filter((c) => daysBetween(c.date, date) > 0),
-        sessions: sessions.filter((s) => daysBetween(s.date, date) >= 0),
-      }),
-    );
-  }
-  return out;
+  return replay(checkIns, sessions);
 }
 
 export interface TodayView {
