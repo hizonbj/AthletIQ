@@ -22,6 +22,15 @@ import type { Tier } from '@/subscription/entitlements';
 import { createHealthProvider } from '@/health/factory';
 import { importHealthData, type ImportResult } from '@/health/import';
 import type { HealthProvider } from '@/health/types';
+import { AsyncStoragePreferences } from '@/settings/preferences';
+import {
+  DEFAULT_PREFERENCES,
+  type Preferences,
+  type PreferencesStore,
+  type ReminderSettings,
+} from '@/settings/types';
+import { createReminders } from '@/notifications/factory';
+import type { Reminders } from '@/notifications/types';
 
 interface AppStateValue {
   ready: boolean;
@@ -36,6 +45,10 @@ interface AppStateValue {
   refresh(): Promise<void>;
   setTier(t: Tier): void;
   importHealth(): Promise<ImportResult>;
+  prefs: Preferences;
+  /** Persists and reschedules the reminder. Returns false if permission was refused. */
+  setReminder(settings: ReminderSettings): Promise<boolean>;
+  completeOnboarding(): Promise<void>;
 }
 
 const Ctx = createContext<AppStateValue | null>(null);
@@ -52,6 +65,8 @@ export function AppStateProvider({
   rosterRepository,
   purchaseStore,
   healthProvider,
+  preferencesStore,
+  reminders,
 }: {
   children: React.ReactNode;
   /** Injectable so previews and tests can swap in an in-memory repository. */
@@ -59,6 +74,8 @@ export function AppStateProvider({
   rosterRepository?: RosterRepository;
   purchaseStore?: PurchaseStore;
   healthProvider?: HealthProvider;
+  preferencesStore?: PreferencesStore;
+  reminders?: Reminders;
 }) {
   const repo = useMemo(() => repository ?? createRepository(), [repository]);
   const purchases = useMemo(() => purchaseStore ?? new MockPurchaseStore(), [purchaseStore]);
@@ -67,8 +84,14 @@ export function AppStateProvider({
     [rosterRepository],
   );
   const health = useMemo(() => healthProvider ?? createHealthProvider(), [healthProvider]);
+  const prefsStore = useMemo(
+    () => preferencesStore ?? new AsyncStoragePreferences(),
+    [preferencesStore],
+  );
+  const reminderService = useMemo(() => reminders ?? createReminders(), [reminders]);
 
   const [tier, setTier] = useState<Tier>('free');
+  const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [insights, setInsights] = useState<Insights>();
   const [ready, setReady] = useState(false);
   const today = useMemo(() => toDayISO(new Date()), []);
@@ -81,15 +104,19 @@ export function AppStateProvider({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const restored = await purchases.getTier();
+      const [restored, loadedPrefs] = await Promise.all([
+        purchases.getTier(),
+        prefsStore.load(),
+      ]);
       if (cancelled) return;
       setTier(restored);
+      setPrefs(loadedPrefs);
       setReady(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, [purchases]);
+  }, [purchases, prefsStore]);
 
   // Re-derive whenever the tier changes: upgrading must unlock immediately.
   useEffect(() => {
@@ -101,6 +128,33 @@ export function AppStateProvider({
     if (result.filledCount > 0) await refresh();
     return result;
   }, [health, repo, today, refresh]);
+
+  const setReminder = useCallback(
+    async (settings: ReminderSettings) => {
+      // Ask only when turning the reminder on: a refusal should leave the
+      // stored preference off rather than claiming a reminder that will
+      // never fire.
+      if (settings.enabled && !(await reminderService.requestPermission())) {
+        const off = { ...settings, enabled: false };
+        const next = { ...prefs, reminder: off };
+        setPrefs(next);
+        await prefsStore.save(next);
+        return false;
+      }
+      const next = { ...prefs, reminder: settings };
+      setPrefs(next);
+      await prefsStore.save(next);
+      await reminderService.schedule(settings);
+      return true;
+    },
+    [prefs, prefsStore, reminderService],
+  );
+
+  const completeOnboarding = useCallback(async () => {
+    const next = { ...prefs, onboarded: true };
+    setPrefs(next);
+    await prefsStore.save(next);
+  }, [prefs, prefsStore]);
 
   const saveCheckIn = useCallback(
     async (c: CheckIn) => {
@@ -131,6 +185,9 @@ export function AppStateProvider({
     refresh,
     setTier,
     importHealth,
+    prefs,
+    setReminder,
+    completeOnboarding,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

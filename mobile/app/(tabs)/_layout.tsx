@@ -9,6 +9,7 @@ import React from 'react';
 import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useApp } from '@/ui/AppState';
+import { useFirstRunRedirect } from '@/ui/FirstRunGate';
 import { hasFeature } from '@/subscription/entitlements';
 import { colors, type } from '@/ui/theme';
 
@@ -18,6 +19,7 @@ function TabIcon({ glyph, color }: { glyph: string; color: string }) {
 
 export default function TabsLayout() {
   const { tier } = useApp();
+  useFirstRunRedirect();
   const showRoster = hasFeature(tier, 'roster');
 
   return (

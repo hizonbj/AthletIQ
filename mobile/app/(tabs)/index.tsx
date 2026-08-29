@@ -7,7 +7,7 @@
  * supporting evidence for the number above it.
  */
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -55,7 +55,17 @@ export default function TodayScreen() {
 
       <SafeAreaView edges={['top']} style={styles.safe}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.greeting}>{greeting()}</Text>
+          <View style={styles.header}>
+            <Text style={styles.greeting}>{greeting()}</Text>
+            <Pressable
+              onPress={() => router.push('/settings')}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
+            >
+              <Text style={styles.settingsGlyph}>⚙</Text>
+            </Pressable>
+          </View>
 
           <View style={styles.ringWrap}>
             <ReadinessRing score={readiness.score} band={band} hasData={hasData} />
@@ -175,7 +185,14 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: TAB_BAR_CLEARANCE },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-  greeting: { ...type.label, color: colors.textTertiary, marginTop: spacing.md },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+  },
+  greeting: { ...type.label, color: colors.textTertiary },
+  settingsGlyph: { color: colors.textTertiary, fontSize: 20 },
   ringWrap: { alignItems: 'center', marginTop: spacing.lg },
   verdict: { alignItems: 'center', marginTop: spacing.lg, marginBottom: spacing.xl },
   band: { ...type.title, fontSize: 32 },

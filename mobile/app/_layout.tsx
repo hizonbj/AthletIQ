@@ -25,6 +25,8 @@ export default function RootLayout() {
             {/* Full-screen flows: no header, they carry their own chrome. */}
             <Stack.Screen name="checkin" options={{ headerShown: false }} />
             <Stack.Screen name="log" options={{ title: 'Log session' }} />
+            <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
             <Stack.Screen
               name="paywall"
               options={{ headerShown: false, presentation: 'modal' }}
