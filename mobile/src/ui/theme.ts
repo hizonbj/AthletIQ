@@ -18,7 +18,12 @@ export const colors = {
 
   text: '#F2F6FA',
   textSecondary: '#A4B2C2',
-  textTertiary: '#6B7A8C',
+  /**
+   * Lightened from #6B7A8C, which measured 4.10:1 on a card — under the 4.5:1
+   * WCAG AA floor for normal text, and this is the colour captions, labels and
+   * hints use. Now 4.60:1 on the lightest surface it sits on.
+   */
+  textTertiary: '#7B8A9C',
 
   accent: '#4DA3FF',
   accentSoft: '#12283F',
