@@ -181,12 +181,18 @@ export function warnFromHistory(
   const costs = comparable.map((o) => o.cost as number);
   const meanCost = Math.round((costs.reduce((a, b) => a + b, 0) / costs.length) * 10) / 10;
 
+  const day = `${article(readiness.recommendedCeiling)} ${readiness.recommendedCeiling} day`;
   const message =
     meanCost > 0
-      ? `You have pushed past a ${readiness.recommendedCeiling} day ${comparable.length} times. ` +
+      ? `You have pushed past ${day} ${comparable.length} times. ` +
         `Readiness fell ${meanCost} points below your normal in the days after, on average.`
-      : `You have pushed past a ${readiness.recommendedCeiling} day ${comparable.length} times. ` +
+      : `You have pushed past ${day} ${comparable.length} times. ` +
         `It has not cost you — readiness held steady afterwards.`;
 
   return { comparableCount: comparable.length, meanCost, message };
+}
+
+/** "an easy day", "a rest day". Intensity names are a closed set, so this is exact. */
+function article(word: string): 'a' | 'an' {
+  return /^[aeiou]/i.test(word) ? 'an' : 'a';
 }

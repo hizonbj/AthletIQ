@@ -5,7 +5,6 @@
  * technical one: an override log is a record of the athlete's own judgement,
  * and there is no reason it should live on our server before they ask it to.
  */
-import * as SQLite from 'expo-sqlite';
 import type { CheckIn, DayISO, Intensity, Session } from '@/domain/types';
 import type { Repository } from './repository';
 
@@ -49,11 +48,16 @@ function toSession(r: SessionRow): Session {
   };
 }
 
-export class SqliteRepository implements Repository {
-  private db: SQLite.SQLiteDatabase | null = null;
+type Database = Awaited<ReturnType<typeof import('expo-sqlite').openDatabaseAsync>>;
 
-  private async handle(): Promise<SQLite.SQLiteDatabase> {
+export class SqliteRepository implements Repository {
+  private db: Database | null = null;
+
+  private async handle(): Promise<Database> {
     if (this.db) return this.db;
+    // Imported lazily: expo-sqlite binds its native module on evaluation, which
+    // throws on web where no such module exists.
+    const SQLite = await import('expo-sqlite');
     const db = await SQLite.openDatabaseAsync(DB_NAME);
     await db.execAsync(`
       PRAGMA journal_mode = WAL;

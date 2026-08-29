@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "AthletIQ",
+    "slug": "athletiq",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "athletiq",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0F14"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.athletiq.app"
+    },
+    "android": {
+      "package": "com.athletiq.app",
+      "adaptiveIcon": { "backgroundColor": "#0B0F14" }
+    },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": false }
+  }
+}

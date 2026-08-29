@@ -231,3 +231,35 @@ describe('warnFromHistory', () => {
     expect(w).toBeUndefined();
   });
 });
+
+describe('warnFromHistory copy', () => {
+  function settled(cost: number): OverrideOutcome {
+    return {
+      override: {
+        date: '2026-08-01',
+        recommended: 'easy',
+        actual: 'hard',
+        magnitude: 2,
+        scoreAtOverride: 45,
+      },
+      status: 'settled',
+      baselineScore: 80,
+      postScore: 80 - cost,
+      cost,
+    };
+  }
+
+  it('uses "an" before a vowel-initial band and "a" otherwise', () => {
+    const easyDay = readiness('2026-08-29', 45); // ceiling: easy
+    const easyMsg = warnFromHistory('hard', easyDay, [settled(10), settled(12)])?.message;
+    expect(easyMsg).toContain('an easy day');
+    expect(easyMsg).not.toContain('a easy day');
+
+    const restDay = readiness('2026-08-29', 20); // ceiling: rest
+    const restMsg = warnFromHistory('hard', restDay, [
+      { ...settled(10), override: { ...settled(10).override, magnitude: 3 } },
+      { ...settled(12), override: { ...settled(12).override, magnitude: 3 } },
+    ])?.message;
+    expect(restMsg).toContain('a rest day');
+  });
+});
