@@ -10,9 +10,10 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { Platform } from 'react-native';
 import { serializeBackup, type Backup } from './backup';
+import { localDayISO } from '@/domain/dates';
 
 function filename(): string {
-  return `athletiq-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  return `athletiq-backup-${localDayISO()}.json`;
 }
 
 export type ShareOutcome = 'shared' | 'unavailable';

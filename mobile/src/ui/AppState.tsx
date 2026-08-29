@@ -12,7 +12,7 @@ import React, {
   useState,
 } from 'react';
 import { buildInsights, type Insights } from '@/domain/insights';
-import { toDayISO } from '@/domain/dates';
+import { localDayISO } from '@/domain/dates';
 import type { CheckIn, DayISO, Session } from '@/domain/types';
 import { createRepository, createRosterRepository } from '@/data/factory';
 import type { Repository } from '@/data/repository';
@@ -94,7 +94,9 @@ export function AppStateProvider({
   const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [insights, setInsights] = useState<Insights>();
   const [ready, setReady] = useState(false);
-  const today = useMemo(() => toDayISO(new Date()), []);
+  // The athlete's local calendar day, not UTC: an evening session in a western
+  // timezone would otherwise be filed against tomorrow.
+  const today = useMemo(() => localDayISO(), []);
 
   const refresh = useCallback(async () => {
     const next = await buildInsights(repo, tier, today);

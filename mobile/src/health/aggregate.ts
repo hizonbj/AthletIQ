@@ -6,6 +6,7 @@
  */
 import type { DayISO } from '@/domain/types';
 import type { HealthSample } from './types';
+import { localDayISO } from '@/domain/dates';
 
 /** A resting-HR reading with the instant it was taken. */
 export interface HrReading {
@@ -22,8 +23,16 @@ export interface SleepPeriod {
   end: string;
 }
 
+/**
+ * The local calendar day an instant belongs to.
+ *
+ * Health records carry absolute instants. Slicing the UTC string would file a
+ * 7am wake-up in Sydney against the previous day, which is the day the athlete
+ * is not checking in for.
+ */
 function dayOf(instant: string): DayISO {
-  return instant.slice(0, 10);
+  const parsed = new Date(instant);
+  return Number.isNaN(parsed.getTime()) ? instant.slice(0, 10) : localDayISO(parsed);
 }
 
 /**

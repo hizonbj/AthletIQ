@@ -1,10 +1,32 @@
-/** Day arithmetic on ISO date strings. UTC throughout — no timezone drift. */
+/**
+ * Day arithmetic on ISO date strings.
+ *
+ * A DayISO is a *calendar day label*, not an instant. Arithmetic on labels runs
+ * through UTC midnight so it is stable and free of DST drift, but deciding
+ * which day an instant falls on must use the athlete's local calendar — a
+ * session logged at 11:30pm in Los Angeles belongs to that evening, not to the
+ * following day in UTC.
+ */
 import type { DayISO } from './types';
 
 const MS_PER_DAY = 86_400_000;
 
+/**
+ * Format an instant as a day label in UTC.
+ *
+ * Correct for label arithmetic (which operates on UTC midnights) and wrong for
+ * "what day is it for this person" — use `localDayISO` for that.
+ */
 export function toDayISO(d: Date): DayISO {
   return d.toISOString().slice(0, 10);
+}
+
+/** The calendar day an instant falls on, in the device's own timezone. */
+export function localDayISO(d: Date = new Date()): DayISO {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function parseDay(d: DayISO): number {
