@@ -7,19 +7,43 @@
     "scheme": "athletiq",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0B0F14"
+      "backgroundColor": "#080B10"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.athletiq.app"
+      "bundleIdentifier": "com.athletiq.app",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "AthletIQ reads your sleep and resting heart rate so you do not have to type them in each morning. It only ever fills in values you have not entered yourself.",
+        "NSHealthUpdateUsageDescription": "AthletIQ does not write to Health."
+      }
     },
     "android": {
       "package": "com.athletiq.app",
-      "adaptiveIcon": { "backgroundColor": "#0B0F14" }
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#080B10"
+      },
+      "permissions": [
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_RESTING_HEART_RATE"
+      ]
     },
-    "plugins": ["expo-router"],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "color": "#4DA3FF"
+        }
+      ]
+    ],
     "experiments": { "typedRoutes": false }
   }
 }
