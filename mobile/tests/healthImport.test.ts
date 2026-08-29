@@ -7,7 +7,7 @@ import type { DayISO } from '@/domain/types';
 const TODAY = '2026-08-29';
 
 class FakeProvider implements HealthProvider {
-  readCalls: Array<{ from: DayISO; to: DayISO }> = [];
+  readCalls: { from: DayISO; to: DayISO }[] = [];
 
   constructor(
     private readonly opts: {

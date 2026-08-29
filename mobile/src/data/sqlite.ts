@@ -20,6 +20,7 @@ interface CheckInRow {
 }
 
 interface SessionRow {
+  id: number;
   date: string;
   intensity: string;
   duration_min: number;
@@ -40,6 +41,7 @@ function toCheckIn(r: CheckInRow): CheckIn {
 
 function toSession(r: SessionRow): Session {
   return {
+    id: String(r.id),
     date: r.date,
     intensity: r.intensity as Intensity,
     durationMin: r.duration_min,
@@ -122,6 +124,11 @@ export class SqliteRepository implements Repository {
     const db = await this.handle();
     const rows = await db.getAllAsync<SessionRow>('SELECT * FROM sessions ORDER BY date');
     return rows.map(toSession);
+  }
+
+  async deleteSession(id: string): Promise<void> {
+    const db = await this.handle();
+    await db.runAsync('DELETE FROM sessions WHERE id = ?', id);
   }
 
   async addSession(s: Session): Promise<void> {

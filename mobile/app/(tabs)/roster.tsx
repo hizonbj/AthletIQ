@@ -9,7 +9,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/ui/AppState';
 import { Card, LockedPanel, SectionTitle, Stat } from '@/ui/components';
-import { bandColors, colors, radius, spacing, type, TAB_BAR_CLEARANCE } from '@/ui/theme';
+import { bandColors, colors, spacing, type, TAB_BAR_CLEARANCE } from '@/ui/theme';
 import { buildRoster, type RosterEntry, type RosterStatus, type RosterView } from '@/domain/roster';
 import { hasFeature } from '@/subscription/entitlements';
 

@@ -42,6 +42,7 @@ interface AppStateValue {
   purchases: PurchaseStore;
   saveCheckIn(c: CheckIn): Promise<void>;
   addSession(s: Session): Promise<void>;
+  deleteSession(id: string): Promise<void>;
   refresh(): Promise<void>;
   setTier(t: Tier): void;
   importHealth(): Promise<ImportResult>;
@@ -158,6 +159,14 @@ export function AppStateProvider({
     await prefsStore.save(next);
   }, [prefs, prefsStore]);
 
+  const deleteSession = useCallback(
+    async (id: string) => {
+      await repo.deleteSession(id);
+      await refresh();
+    },
+    [repo, refresh],
+  );
+
   const saveCheckIn = useCallback(
     async (c: CheckIn) => {
       await repo.putCheckIn(c);
@@ -184,6 +193,7 @@ export function AppStateProvider({
     purchases,
     saveCheckIn,
     addSession,
+    deleteSession,
     refresh,
     setTier,
     importHealth,

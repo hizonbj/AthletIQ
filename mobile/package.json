@@ -10,7 +10,10 @@
     "web": "expo start --web",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
+    "test:tz": "for tz in UTC America/Los_Angeles Australia/Sydney Pacific/Kiritimati; do TZ=$tz vitest run || exit 1; done",
+    "verify": "npm run typecheck && npm run lint && npm test"
   },
   "dependencies": {
     "@expo/metro-runtime": "^57.0.14",
@@ -43,6 +46,8 @@
   },
   "devDependencies": {
     "@types/react": "~18.3.12",
+    "eslint": "^8.57.1",
+    "eslint-config-expo": "^8.0.1",
     "typescript": "~5.6.3",
     "vitest": "^2.1.8"
   }

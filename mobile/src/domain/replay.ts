@@ -53,8 +53,8 @@ export function replay(checkIns: CheckIn[], sessions: Session[]): Map<DayISO, Re
   const span = maxDay - origin + 1;
 
   const loadByDay = new Float64Array(span);
-  const hrByDay: Array<number | undefined> = new Array(span);
-  const checkInByDay: Array<CheckIn | undefined> = new Array(span);
+  const hrByDay: (number | undefined)[] = new Array(span);
+  const checkInByDay: (CheckIn | undefined)[] = new Array(span);
 
   checkIns.forEach((c, i) => {
     const idx = checkInDays[i] - origin;

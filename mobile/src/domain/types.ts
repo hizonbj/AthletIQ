@@ -35,6 +35,11 @@ export function intensityRank(i: Intensity): number {
 
 /** A training session the athlete logged. */
 export interface Session {
+  /**
+   * Assigned by storage. Absent on a session that has not been saved yet, so
+   * anything that identifies a stored session must handle it being undefined.
+   */
+  id?: string;
   date: DayISO;
   intensity: Intensity;
   /** Duration in minutes. Drives training load alongside intensity. */

@@ -36,7 +36,21 @@ function writeStore(snap: Snapshot): void {
 }
 
 export class WebRepository implements Repository {
-  private snap: Snapshot = readStore();
+  private snap: Snapshot;
+
+  constructor() {
+    const stored = readStore();
+    // Sessions written before ids existed have none, and without one they can
+    // never be deleted. Backfill on load so old data is as editable as new.
+    let changed = false;
+    stored.sessions = stored.sessions.map((session, i) => {
+      if (session.id) return session;
+      changed = true;
+      return { ...session, id: `legacy-${i}-${session.date}` };
+    });
+    this.snap = stored;
+    if (changed) this.persist();
+  }
 
   private persist() {
     writeStore(this.snap);
@@ -60,7 +74,15 @@ export class WebRepository implements Repository {
   }
 
   async addSession(s: Session): Promise<void> {
-    this.snap.sessions = [...this.snap.sessions, s];
+    this.snap.sessions = [
+      ...this.snap.sessions,
+      { ...s, id: s.id ?? `web-${Date.now()}-${this.snap.sessions.length}` },
+    ];
+    this.persist();
+  }
+
+  async deleteSession(id: string): Promise<void> {
+    this.snap.sessions = this.snap.sessions.filter((s) => s.id !== id);
     this.persist();
   }
 

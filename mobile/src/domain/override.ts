@@ -9,7 +9,7 @@
  */
 import type { DayISO, Intensity, Readiness, Session } from './types';
 import { intensityRank } from './types';
-import { addDays, daysBetween } from './dates';
+import { addDays } from './dates';
 
 /** Days after an override that we watch to judge its cost. */
 export const OUTCOME_WINDOW_DAYS = 3;

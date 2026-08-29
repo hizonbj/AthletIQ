@@ -19,7 +19,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { colors, radius, spacing, type } from './theme';
+import { colors, spacing, type } from './theme';
 import {
   formatHours,
   offsetForValue,

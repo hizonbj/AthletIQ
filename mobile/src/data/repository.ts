@@ -15,6 +15,8 @@ export interface Repository {
 
   getSessions(): Promise<Session[]>;
   addSession(session: Session): Promise<void>;
+  /** Remove one stored session. A no-op if the id is unknown. */
+  deleteSession(id: string): Promise<void>;
 
   clear(): Promise<void>;
 }
@@ -22,10 +24,14 @@ export interface Repository {
 export class InMemoryRepository implements Repository {
   private checkIns = new Map<DayISO, CheckIn>();
   private sessions: Session[] = [];
+  private nextId = 0;
 
   constructor(seed?: { checkIns?: CheckIn[]; sessions?: Session[] }) {
     seed?.checkIns?.forEach((c) => this.checkIns.set(c.date, c));
-    this.sessions = [...(seed?.sessions ?? [])];
+    this.sessions = (seed?.sessions ?? []).map((s) => ({
+      ...s,
+      id: s.id ?? `mem-${++this.nextId}`,
+    }));
   }
 
   async getCheckIns(): Promise<CheckIn[]> {
@@ -45,7 +51,11 @@ export class InMemoryRepository implements Repository {
   }
 
   async addSession(session: Session): Promise<void> {
-    this.sessions.push(session);
+    this.sessions.push({ ...session, id: session.id ?? `mem-${++this.nextId}` });
+  }
+
+  async deleteSession(id: string): Promise<void> {
+    this.sessions = this.sessions.filter((s) => s.id !== id);
   }
 
   async clear(): Promise<void> {

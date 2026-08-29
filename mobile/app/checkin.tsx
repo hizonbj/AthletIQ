@@ -21,7 +21,7 @@ import {
   SLEEP_QUALITY_WORDS,
   SORENESS_WORDS,
 } from '@/ui/checkInCopy';
-import { colors, radius, spacing, type } from '@/ui/theme';
+import { colors, spacing, type } from '@/ui/theme';
 import { successFeedback, tapFeedback } from '@/ui/haptics';
 import type { CheckIn } from '@/domain/types';
 

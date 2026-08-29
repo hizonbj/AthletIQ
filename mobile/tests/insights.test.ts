@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { InMemoryRepository } from '@/data/repository';
 import { buildInsights, checkBeforeSession, isLocked, replayReadiness } from '@/domain/insights';
 import { addDays } from '@/domain/dates';
-import type { CheckIn, Session } from '@/domain/types';
+import type { CheckIn } from '@/domain/types';
 
 const TODAY = '2026-08-29';
 

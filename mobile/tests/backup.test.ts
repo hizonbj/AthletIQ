@@ -142,3 +142,70 @@ describe('parseBackup skips malformed records instead of coercing them', () => {
     expect(skipped).toBe(1);
   });
 });
+
+describe('session identity', () => {
+  it('assigns an id to every stored session, including seeded ones', async () => {
+    const repo = new InMemoryRepository({ checkIns: [], sessions: SESSIONS });
+    const stored = await repo.getSessions();
+    expect(stored.every((s) => typeof s.id === 'string' && s.id.length > 0)).toBe(true);
+    expect(new Set(stored.map((s) => s.id)).size).toBe(stored.length);
+  });
+
+  it('assigns an id on add', async () => {
+    const repo = new InMemoryRepository();
+    await repo.addSession({ date: '2026-08-29', intensity: 'easy', durationMin: 30 });
+    const [stored] = await repo.getSessions();
+    expect(stored.id).toBeDefined();
+  });
+
+  it('deletes only the session addressed', async () => {
+    const repo = new InMemoryRepository({ checkIns: [], sessions: SESSIONS });
+    const before = await repo.getSessions();
+    await repo.deleteSession(before[0].id as string);
+    const after = await repo.getSessions();
+    expect(after).toHaveLength(before.length - 1);
+    expect(after.map((s) => s.id)).not.toContain(before[0].id);
+  });
+
+  it('ignores a delete for an unknown id rather than throwing', async () => {
+    const repo = new InMemoryRepository({ checkIns: [], sessions: SESSIONS });
+    await expect(repo.deleteSession('does-not-exist')).resolves.toBeUndefined();
+    expect(await repo.getSessions()).toHaveLength(SESSIONS.length);
+  });
+
+  it('does not carry ids into a backup file, since they are storage-local', async () => {
+    // Ids are assigned by whichever store holds the data; restoring into a
+    // different device must not try to preserve the old ones.
+    const repo = new InMemoryRepository({ checkIns: [], sessions: SESSIONS });
+    const { backup } = parseBackup(serializeBackup(await exportBackup(repo)));
+    expect(backup.sessions.every((s) => s.id === undefined)).toBe(true);
+  });
+
+  it('re-assigns fresh ids when a backup is restored', async () => {
+    const source = new InMemoryRepository({ checkIns: [], sessions: SESSIONS });
+    const { backup } = parseBackup(serializeBackup(await exportBackup(source)));
+    const target = new InMemoryRepository();
+    await restoreBackup(target, backup);
+    const restored = await target.getSessions();
+    expect(restored).toHaveLength(SESSIONS.length);
+    expect(restored.every((s) => typeof s.id === 'string')).toBe(true);
+  });
+});
+
+describe('legacy sessions without ids', () => {
+  it('are given ids so they can be deleted', async () => {
+    // Sessions written before identity existed would otherwise be permanently
+    // undeletable, which is exactly the mis-logged data people need to remove.
+    const repo = new InMemoryRepository({
+      checkIns: [],
+      sessions: [
+        { date: '2026-08-28', intensity: 'hard', durationMin: 90 },
+        { date: '2026-08-29', intensity: 'easy', durationMin: 30 },
+      ],
+    });
+    const stored = await repo.getSessions();
+    expect(stored.every((s) => s.id)).toBe(true);
+    await repo.deleteSession(stored[0].id as string);
+    expect(await repo.getSessions()).toHaveLength(1);
+  });
+});

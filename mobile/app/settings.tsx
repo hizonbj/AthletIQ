@@ -16,7 +16,7 @@ import { exportBackup, parseBackup, restoreBackup } from '@/data/backup';
 import { pickBackupText, shareBackup } from '@/data/backupFile';
 
 /** Times people actually wake up. A full clock picker is overkill for this. */
-const TIMES: Array<{ hour: number; minute: number }> = [
+const TIMES: { hour: number; minute: number }[] = [
   { hour: 5, minute: 30 },
   { hour: 6, minute: 0 },
   { hour: 6, minute: 30 },

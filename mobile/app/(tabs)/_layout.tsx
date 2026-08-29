@@ -50,6 +50,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="history"
+        options={{
+          title: 'Sessions',
+          tabBarIcon: ({ color }) => <TabIcon glyph="≡" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="patterns"
         options={{
           title: 'Patterns',

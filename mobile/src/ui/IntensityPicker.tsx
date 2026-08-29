@@ -59,7 +59,6 @@ export function IntensityPicker({
             <Row
               intensity={intensity}
               selected={value === intensity}
-              above={above}
               // Above the limit the row adopts the warning colour it will trigger,
               // so the choice and its consequence read as the same thing.
               tint={above ? bandColors.easy : bandColor}
@@ -78,13 +77,11 @@ export function IntensityPicker({
 function Row({
   intensity,
   selected,
-  above,
   tint,
   onPress,
 }: {
   intensity: Intensity;
   selected: boolean;
-  above: boolean;
   tint?: string;
   onPress: () => void;
 }) {
