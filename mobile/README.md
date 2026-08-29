@@ -216,10 +216,17 @@ is not code you can write without decisions or hardware:
    one coach, and it is not multi-device: athletes cannot check in on their own
    phones and have it reach the coach. That needs a backend, accounts and a sync
    model — a product decision, not a missing function.
-4. **Store metadata**: screenshots and a description. `PRIVACY.md` is written
-   and accurate to what the app actually does; it needs hosting at a public URL
-   for the store listings. Keep it accurate — if a future version adds an
-   account or sync, the answers in it genuinely change.
+4. **Turn on GitHub Pages** so the required URLs resolve. `docs/` at the repo
+   root holds the landing, privacy, support and terms pages; enable Pages for
+   the `docs/` folder and they publish at `https://hizonbj.github.io/AthletIQ/`.
+   Those URLs are hardcoded in `src/links.ts` — change that one file if the site
+   moves. **The links must resolve before you submit**: a reviewer who cannot
+   tap through to the Terms and Privacy documents rejects the build under
+   guideline 3.1.2.
+5. **Store metadata**: screenshots and a description. Keep the privacy policy
+   accurate — if a future version adds an account or sync, its answers genuinely
+   change, and `docs/privacy.html` is generated from `mobile/PRIVACY.md` so edit
+   the Markdown.
 
 ## Deliberate constraints
 

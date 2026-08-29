@@ -1,0 +1,49 @@
+/* Shared styling for the AthletIQ support pages. Deliberately one small file
+   with no dependencies: these pages exist to satisfy store requirements and be
+   readable, not to be a marketing site. */
+:root {
+  color-scheme: dark;
+  --bg: #080B10;
+  --surface: #12171F;
+  --border: #232C38;
+  --text: #F2F6FA;
+  --muted: #A4B2C2;
+  --dim: #7B8A9C;
+  --accent: #4DA3FF;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 0 20px 80px;
+}
+.wrap { max-width: 680px; margin: 0 auto; }
+header { padding: 48px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+.mark { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
+.mark svg { display: block; }
+.mark span { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
+nav { margin-top: 20px; display: flex; gap: 20px; flex-wrap: wrap; }
+nav a { color: var(--accent); text-decoration: none; font-size: 15px; }
+nav a:hover { text-decoration: underline; }
+h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.8px; margin: 0 0 8px; }
+h2 { font-size: 20px; font-weight: 700; margin: 40px 0 12px; letter-spacing: -0.2px; }
+p, li { color: var(--muted); }
+li { margin-bottom: 8px; }
+a { color: var(--accent); }
+.updated { color: var(--dim); font-size: 14px; margin-bottom: 32px; }
+.lead { font-size: 18px; color: var(--text); line-height: 1.6; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+footer {
+  margin-top: 64px; padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--dim); font-size: 14px;
+}
+code { background: var(--surface); padding: 2px 6px; border-radius: 5px; font-size: 14px; }

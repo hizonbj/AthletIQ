@@ -6,7 +6,7 @@
  * record of your own decisions and what they cost.
  */
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,6 +16,7 @@ import { Button } from '@/ui/components';
 import { bandColors, colors, radius, spacing, type } from '@/ui/theme';
 import { successFeedback, tapFeedback } from '@/ui/haptics';
 import { PurchaseCancelledError, type SubscriptionPlan } from '@/subscription/store';
+import { PRIVACY_URL, TERMS_URL } from '@/links';
 
 const BENEFITS = [
   'Every session you trained through a low score, on the record',
@@ -133,6 +134,33 @@ export default function PaywallScreen() {
             <Button label="Restore purchase" variant="ghost" onPress={onRestore} disabled={busy} />
           </View>
 
+          {/* Required by App Store guideline 3.1.2: the renewal terms and both
+              links must be on the purchase screen itself, not only in the
+              store listing. */}
+          <Text style={styles.legal}>
+            Subscriptions renew automatically unless cancelled at least 24 hours before the end
+            of the current period. Manage or cancel anytime in your App Store or Google Play
+            account settings.
+          </Text>
+
+          <View style={styles.legalLinks}>
+            <Pressable
+              onPress={() => void Linking.openURL(TERMS_URL)}
+              accessibilityRole="link"
+              hitSlop={8}
+            >
+              <Text style={styles.legalLink}>Terms of Use</Text>
+            </Pressable>
+            <Text style={styles.legalSeparator}>·</Text>
+            <Pressable
+              onPress={() => void Linking.openURL(PRIVACY_URL)}
+              accessibilityRole="link"
+              hitSlop={8}
+            >
+              <Text style={styles.legalLink}>Privacy Policy</Text>
+            </Pressable>
+          </View>
+
           <Text style={styles.legal}>
             AthletIQ tracks training decisions. It is not a medical device and does not diagnose,
             treat, or predict injury. Your data stays on your device.
@@ -227,6 +255,15 @@ const styles = StyleSheet.create({
   price: { ...type.heading, color: colors.text },
   actions: { marginTop: spacing.lg, gap: spacing.sm },
   error: { color: bandColors.rest, ...type.caption, marginBottom: spacing.md },
+  legalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  legalLink: { ...type.caption, color: colors.accent, textDecorationLine: 'underline' },
+  legalSeparator: { ...type.caption, color: colors.textTertiary },
   legal: {
     ...type.caption,
     fontSize: 11,

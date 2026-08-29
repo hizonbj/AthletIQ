@@ -6,7 +6,16 @@
  * lives in one place — losing a phone should not lose it.
  */
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import {
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/ui/AppState';
 import { Button, Card, SectionTitle } from '@/ui/components';
@@ -14,6 +23,7 @@ import { bandColors, colors, radius, spacing, type } from '@/ui/theme';
 import { successFeedback, tapFeedback } from '@/ui/haptics';
 import { exportBackup, parseBackup, restoreBackup } from '@/data/backup';
 import { pickBackupText, shareBackup } from '@/data/backupFile';
+import { PRIVACY_URL, SUPPORT_URL, TERMS_URL } from '@/links';
 
 /** Times people actually wake up. A full clock picker is overkill for this. */
 const TIMES: { hour: number; minute: number }[] = [
@@ -180,11 +190,35 @@ export default function SettingsScreen() {
         )}
       </Card>
 
+      <SectionTitle>About</SectionTitle>
+      <Card>
+        <LinkRow label="Support and FAQ" url={SUPPORT_URL} />
+        <LinkRow label="Privacy policy" url={PRIVACY_URL} />
+        <LinkRow label="Terms of use" url={TERMS_URL} />
+      </Card>
+
       <Text style={styles.legal}>
         AthletIQ tracks training decisions. It is not a medical device and does not diagnose,
         treat, or predict injury.
       </Text>
     </ScrollView>
+  );
+}
+
+function LinkRow({ label, url }: { label: string; url: string }) {
+  return (
+    <Pressable
+      onPress={() => {
+        tapFeedback();
+        void Linking.openURL(url);
+      }}
+      accessibilityRole="link"
+      accessibilityLabel={label}
+      style={styles.linkRow}
+    >
+      <Text style={styles.linkLabel}>{label}</Text>
+      <Text style={styles.linkChevron}>›</Text>
+    </Pressable>
   );
 }
 
@@ -217,4 +251,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   gap: { height: spacing.sm },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+  },
+  linkLabel: { ...type.body, color: colors.text },
+  linkChevron: { color: colors.textTertiary, fontSize: 22 },
 });
